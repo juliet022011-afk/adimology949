@@ -16,24 +16,44 @@ export default function WatchlistSidebar({ onSelect }: WatchlistSidebarProps) {
   const [error, setError] = useState<string | null>(null);
   const [refreshSeed, setRefreshSeed] = useState(0);
 
-  // Fetch groups on mount
+  // Fetch groups and watchlist items
   useEffect(() => {
     const fetchGroups = async () => {
+      if (groups.length === 0) setLoading(true);
+      setError(null);
       try {
         const res = await fetch('/api/watchlist/groups');
         const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
+        
+        if (!json.success) {
+          // If it's a known error (like token issue), show it
+          if (json.error && (json.error.includes('token') || json.error.includes('auth'))) {
+            setError(json.error);
+          }
+          return;
+        }
+
+        if (Array.isArray(json.data) && json.data.length > 0) {
           setGroups(json.data);
-          // Select default or first group
-          const defaultG = json.data.find((g: WatchlistGroup) => g.is_default) || json.data[0];
-          setSelectedGroupId(defaultG?.watchlist_id || null);
+          // If no group is selected yet, or the current selected group is not in the new groups list
+          const currentGroupExists = json.data.some((g: WatchlistGroup) => g.watchlist_id === selectedGroupId);
+          if (!selectedGroupId || !currentGroupExists) {
+            const defaultG = json.data.find((g: WatchlistGroup) => g.is_default) || json.data[0];
+            setSelectedGroupId(defaultG?.watchlist_id || null);
+          }
+        } else {
+          setError('No watchlist groups found');
         }
       } catch (err) {
         console.error('Error fetching groups:', err);
+        setError('Failed to load watchlist groups');
+      } finally {
+        if (!selectedGroupId) setLoading(false);
       }
     };
+
     fetchGroups();
-  }, []);
+  }, [refreshSeed]);
 
   // Fetch watchlist items when group changes or refreshSeed changes
   useEffect(() => {
@@ -96,17 +116,35 @@ export default function WatchlistSidebar({ onSelect }: WatchlistSidebarProps) {
   if (loading && groups.length === 0) {
     return (
       <div style={{ padding: '1rem' }}>
-        <h3 style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>Watchlist</h3>
-        <div style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>Loading...</div>
+        <h3 style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Watchlist</h3>
+        <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '2rem 0' }}>
+          <div className="spinner" style={{ width: '20px', height: '20px', margin: '0 auto 1rem' }}></div>
+          <div style={{ fontSize: '0.8rem' }}>Loading Watchlist...</div>
+        </div>
       </div>
     );
   }
 
-  if (error) {
+  if (error && groups.length === 0) {
     return (
       <div style={{ padding: '1rem' }}>
-        <h3 style={{ marginBottom: '1rem', color: 'var(--text-secondary)' }}>Watchlist</h3>
-        <div style={{ color: 'var(--accent-warning)', fontSize: '0.875rem' }}>{error}</div>
+        <h3 style={{ marginBottom: '1rem', color: 'var(--text-secondary)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Watchlist</h3>
+        <div className="glass-card" style={{ 
+          padding: '1rem', 
+          background: 'rgba(245, 87, 108, 0.05)', 
+          border: '1px solid rgba(245, 87, 108, 0.2)',
+          borderRadius: '12px',
+          textAlign: 'center'
+        }}>
+          <div style={{ color: 'var(--accent-warning)', fontSize: '0.8rem', marginBottom: '0.5rem' }}>
+            {error.includes('token') || error.includes('auth') ? '🔴 Session Expired' : '❌ Error'}
+          </div>
+          <div style={{ color: 'var(--text-secondary)', fontSize: '0.75rem', lineHeight: '1.4' }}>
+            {error.includes('token') || error.includes('auth') 
+              ? 'Please login to Stockbit via the extension and wait for connection.' 
+              : error}
+          </div>
+        </div>
       </div>
     );
   }
@@ -170,6 +208,20 @@ export default function WatchlistSidebar({ onSelect }: WatchlistSidebarProps) {
       {loading && (
         <div style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '1rem' }}>
           Loading...
+        </div>
+      )}
+
+      {error && groups.length > 0 && (
+        <div style={{ 
+          color: 'var(--accent-warning)', 
+          fontSize: '0.75rem', 
+          padding: '0.75rem', 
+          textAlign: 'center',
+          background: 'rgba(245, 87, 108, 0.05)',
+          borderRadius: '8px',
+          marginBottom: '0.5rem'
+        }}>
+          ⚠️ {error}
         </div>
       )}
 
