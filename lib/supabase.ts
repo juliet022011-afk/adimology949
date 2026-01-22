@@ -311,6 +311,42 @@ export async function getLatestStockQuery(emiten: string) {
 }
 
 /**
+ * Get specific stock query for a given emiten and date range
+ */
+export async function getSpecificStockQuery(emiten: string, fromDate: string, toDate: string) {
+  const { data, error } = await supabase
+    .from('stock_queries')
+    .select('*')
+    .eq('emiten', emiten.toUpperCase())
+    .eq('from_date', fromDate)
+    .eq('to_date', toDate)
+    .eq('status', 'success')
+    .limit(1)
+    .single();
+
+  if (error) return null;
+  return data;
+}
+
+/**
+ * Get stock price for a specific emiten on a specific date (matching from_date)
+ */
+export async function getStockPriceByDate(emiten: string, date: string) {
+  const { data, error } = await supabase
+    .from('stock_queries')
+    .select('harga, ara, arb, total_bid, total_offer, fraksi')
+    .eq('emiten', emiten.toUpperCase())
+    .eq('from_date', date)
+    .eq('status', 'success')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (error) return null;
+  return data;
+}
+
+/**
  * Update the most recent previous day's real price for an emiten
  */
 export async function updatePreviousDayRealPrice(emiten: string, currentDate: string, price: number) {
