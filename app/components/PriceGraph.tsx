@@ -54,6 +54,23 @@ export default function PriceGraph({ ticker }: PriceGraphProps) {
       "locale": "en",
       "allow_symbol_change": true,
       "calendar": false,
+      "details": true,
+      "hide_side_toolbar": true,
+      "hide_top_toolbar": false,
+      "hide_legend": false,
+      "hide_volume": false,
+      "hotlist": false,
+      "save_image": true,
+      "watchlist": [],
+      "withdateranges": true,
+      "compareSymbols": [],
+      "show_popup_button": true,
+      "popup_height": "650",
+      "popup_width": "1000",
+      "studies": [
+        "STD;MA%Ribbon",
+        "STD;RSI"
+      ],
       "support_host": "https://www.tradingview.com",
       "backgroundColor": isLightTheme ? "#ffffff" : "#0F0F0F",
       "gridColor": isLightTheme ? "rgba(46, 46, 46, 0.06)" : "rgba(242, 242, 242, 0.06)"
