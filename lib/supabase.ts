@@ -626,4 +626,37 @@ export async function getLatestBackgroundJobLog(jobName: string) {
   return data || null;
 }
 
+/**
+ * Get a profile setting by key
+ */
+export async function getProfileSetting(key: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('profile')
+    .select('value')
+    .eq('key', key)
+    .single();
 
+  if (error || !data) return null;
+  return data.value;
+}
+
+/**
+ * Set a profile setting (upsert)
+ */
+export async function setProfileSetting(key: string, value: string) {
+  const { data, error } = await supabase
+    .from('profile')
+    .upsert(
+      { key, value, updated_at: new Date().toISOString() },
+      { onConflict: 'key' }
+    )
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error saving profile setting:', error);
+    throw error;
+  }
+
+  return data;
+}

@@ -6,11 +6,20 @@
 Adimology adalah aplikasi web untuk menganalisis target harga saham berdasarkan data transaksi broker (bandarmologi) dari Stockbit. Aplikasi ini juga melacak performa analisis secara otomatis dan menyediakan data akumulasi broker.
 
 ![Adimology Preview 1](public/adimology01.PNG)
-![Adimology Preview 2](public/adimology02.PNG)
 
 ---
 
 💡 **Credit Rumus**: Algoritma dan rumus analisis dalam aplikasi ini didasarkan pada metodologi dari **[Adi Sucipto](https://www.instagram.com/adisuciipto/)**.
+
+---
+
+## Changelog
+
+### v0.1.0 (2026-02-11)
+- **Migrasi Otomatis**: Sekarang database mendukung migrasi otomatis (perlu eksekusi `supabase/000_init.sql` secara manual terlebih dahulu di Supabase), selanjutnya setiap build akan menjalankan file SQL baru secara otomatis.
+- **Visualisasi History Emiten**: Penambahan komponen visualisasi riwayat analisis emiten yang lebih informatif.
+- **Penyimpanan Parameter History**: Menyimpan preferensi jumlah riwayat (3, 5, 10, 20 hari) ke database untuk konsistensi antar sesi (file migrasi `supabase/009_add_keystat_signal.sql`).
+- **Fixing Retry Failed Job**: Perbaikan pada sistem retry untuk background job yang gagal agar lebih stabil.
 
 ---
 
@@ -20,18 +29,16 @@ Adimology adalah aplikasi web untuk menganalisis target harga saham berdasarkan 
 - **Data Terintegrasi Stockbit**: Mengambil data transaksi broker summary.
 - **History & Watchlist**: Menyimpan riwayat analisis untuk dipantau di kemudian hari.
 - **Sync Watchlist & Hapus Otomatis**: Menampilkan watchlist langsung dari akun Stockbit termasuk fungsi delete.
-- **Tracking Real Harga (H+1)**: Secara otomatis memperbarui harga riil di hari bursa berikutnya untuk memverifikasi apakah target analisis tercapai.
+- **Tracking Real Harga**: Otomatis memperbarui harga riil di hari bursa berikutnya untuk memverifikasi target.
 - **Sistem Background Job & Retry**: Pemantauan status background job (analisis otomatis) dengan tombol **Retry** untuk menjalankan ulang job yang gagal.
 - **Advanced Charts (TradingView & Chartbit)**:
   - Integrasi grafis dengan **Chartbit**.
   - Integrasi **TradingView Advanced Chart** dengan indikator RSI dan Oversold untuk konfirmasi sinyal Buy/Sell. Register ke https://www.tradingview.com/ untuk bisa melihat grafiknya.
-- **Filter Flag & Watchlist**: Filter cepat berdasarkan flag emiten (Big Spec, Trend, dll) dan grup watchlist untuk mempermudah pemantauan portfolio.
-- **Frozen Glass Design System**: Antarmuka modern dengan gaya *Glassmorphism/Frozen Glass Material*.
-- **Multi-Theme Support**: Dukungan penuh mode **Light** dan **Dark** yang sinkron dengan sistem atau preferensi pengguna.
+- **Filter Flag & Watchlist**: Filter cepat berdasarkan flag emiten dan watchlist untuk mempermudah pemantauan portfolio.
 - **Ringkasan Broker (Top 1, 3, 5)**: Visualisasi kekuatan akumulasi vs distribusi broker.
-- **Export to PDF**: Unduh laporan riwayat analisis dalam format PDF yang rapi.
 - **AI Story Analysis**: Analisis berita dan sentimen pasar menggunakan AI (Gemini) untuk merangkum story, SWOT, dan katalis emiten secara instan.
-- **Multi-Version Analysis Tracking**: Menyimpan dan menampilkan riwayat analisis AI sebelumnya sehingga Anda bisa melacak perubahan narasi pasar dari waktu ke waktu.
+- **Multi-Version Analysis**: Menyimpan dan menampilkan riwayat analisis AI sebelumnya sehingga Anda bisa melacak perubahan narasi pasar dari waktu ke waktu.
+- **Export to PDF**: Unduh laporan riwayat analisis dalam format PDF yang rapi.
 
 ---
 
@@ -66,12 +73,19 @@ Ikuti langkah-langkah berikut secara berurutan:
 ## A1. Setup Supabase
 
 1. Buat akun dan project baru di [Supabase](https://supabase.com/)
-2. Buka **SQL Editor** di dashboard Supabase
-3. Jalankan script SQL yang ada di folder `supabase/` **secara berurutan berdasarkan nama filenya** (contoh: mulai dari `001_...` hingga `011_...`).
-
-4. Catat kredensial berikut dari **Project Settings > API**:
+2. Catat kredensial berikut dari **Project Settings > Data API**:
    - `Project URL` → untuk `NEXT_PUBLIC_SUPABASE_URL`
+3. Catat kredensial berikut dari **Project Settings > API Keys > Legacy anon, service_role API keys**:
    - `anon public` key → untuk `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+
+> **PENTING: Persiapan Database (Wajib Sekali Saja)**
+> Agar migrasi otomatis dapat berjalan, Anda perlu menyiapkan infrastruktur pelacakan migrasi secara manual:
+> 1. Buka **SQL Editor** di Dashboard Supabase.
+> 2. Klik **New query**.
+> 3. Salin isi file `supabase/000_init.sql` dari repository ini dan tempel di editor.
+> 4. Klik **Run**.
+> 5. Setelah berhasil, migrasi database lainnya (`001_...` dst) akan dijalankan otomatis setiap kali build di Netlify.
 
 ## A2. Deploy ke Netlify
 
@@ -102,8 +116,8 @@ Ikuti langkah-langkah berikut secara berurutan:
 3. Edit `manifest.json` - ganti `YOUR_APP_DOMAIN` dengan URL Netlify Anda:
    ```json
    "host_permissions": [
-     "https://stockbit.com/*",
-     "https://your-app.netlify.app/*"
+      "https://*.stockbit.com/*",
+      "https://your-app.netlify.app/*"
    ]
    ```
 
@@ -137,12 +151,18 @@ Ikuti langkah-langkah berikut secara berurutan:
 > ⚠️ Langkah ini **sama dengan Opsi A**. Jika sudah setup Supabase, lanjut ke B2.
 
 1. Buat akun dan project baru di [Supabase](https://supabase.com/)
-2. Buka **SQL Editor** di dashboard Supabase
-3. Jalankan script SQL yang ada di folder `supabase/` **secara berurutan berdasarkan nama filenya** (contoh: mulai dari `001_...` hingga `011_...`).
-
-4. Catat kredensial berikut dari **Project Settings > API**:
+2. Catat kredensial berikut dari **Project Settings > Data API**:
    - `Project URL` → untuk `NEXT_PUBLIC_SUPABASE_URL`
+3. Catat kredensial berikut dari **Project Settings > API Keys > Legacy anon, service_role API keys**:
    - `anon public` key → untuk `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+> **PENTING: Persiapan Database (Wajib Sekali Saja)**
+> Lakukan langkah yang sama seperti di **Opsi A (A1: Langkah 1-4)** dengan menjalankan `supabase/000_init.sql` di SQL Editor Supabase.
+> 
+> Setelah infrastruktur siap, Anda bisa menjalankan migrasi database lainnya secara otomatis dengan perintah:
+> ```bash
+> npm run migrate
+> ```
 
 ## B2. Clone & Install
 
@@ -217,8 +237,8 @@ Fitur analisis AI (Story Analysis) menggunakan Netlify Functions. Untuk menjalan
 3. Edit `manifest.json` - konfigurasi untuk localhost:
    ```json
    "host_permissions": [
-     "https://stockbit.com/*",
-     "http://localhost:3000/*"
+      "https://*.stockbit.com/*",
+      "http://localhost:3000/*"
    ]
    ```
 

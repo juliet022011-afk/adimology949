@@ -1,8 +1,15 @@
+console.log("Stockbit Token Syncer: Background script starting...");
+
 // Configuration - Ganti domain ini dengan domain aplikasi Anda
 // const APP_API_URL = "http://localhost:3000/api/update-token"; // Dev
 const APP_API_URL = "https://YOUR_APP_DOMAIN.netlify.app/api/update-token"; // Prod
 
+console.log("Target API URL:", APP_API_URL);
+
 let lastSyncedToken = null;
+
+console.log("Registering webRequest listener...");
+
 
 // Helper to decode JWT payload
 function parseJwt(token) {
@@ -21,6 +28,8 @@ function parseJwt(token) {
 
 chrome.webRequest.onBeforeSendHeaders.addListener(
   (details) => {
+    console.log("Checking request:", details.url);
+    
     // Look for the Authorization header
     const authHeader = details.requestHeaders.find(
       (header) => header.name.toLowerCase() === "authorization"
@@ -33,21 +42,29 @@ chrome.webRequest.onBeforeSendHeaders.addListener(
 
         // Only sync if the token has changed to avoid spamming the API
         if (token !== lastSyncedToken) {
-          console.log("New token detected. Analyzing...");
+          console.log("New token candidate detected...");
           
           const decoded = parseJwt(token);
-          const expiresAt = decoded ? decoded.exp : null;
+          
+          // Only sync if it's a valid JWT (must have a payload with an expiry)
+          if (!decoded || !decoded.exp) {
+            console.log("Skipping non-JWT or invalid token.");
+            return;
+          }
+
+          console.log("Valid JWT detected from:", details.url);
+          const expiresAt = decoded.exp;
           
           // Debugging
-          console.log("Token Expiry:", expiresAt ? new Date(expiresAt * 1000) : "Unknown");
+          console.log("Token Expiry:", new Date(expiresAt * 1000));
           
           syncToken(token, expiresAt);
         }
       }
     }
   },
-  { urls: ["https://stockbit.com/*", "https://api.stockbit.com/*"] },
-  ["requestHeaders"]
+  { urls: ["https://*.stockbit.com/*"] },
+  ["requestHeaders", "extraHeaders"]
 );
 
 function syncToken(token, expiresAt) {

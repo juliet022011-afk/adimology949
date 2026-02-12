@@ -8,9 +8,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: 'Unsupported job type' }, { status: 400 });
     }
 
-    // Trigger Netlify function from server-side to avoid CORS
+    // Trigger manual Netlify function instead of scheduled one
+    // Scheduled functions return 500 when called via HTTP
     const baseUrl = process.env.URL || 'http://localhost:8888';
-    const functionUrl = `${baseUrl}/.netlify/functions/analyze-watchlist`;
+    const functionUrl = `${baseUrl}/.netlify/functions/analyze-watchlist-manual`;
 
     console.log(`[Job Retry] Triggering background job at: ${functionUrl}`);
 

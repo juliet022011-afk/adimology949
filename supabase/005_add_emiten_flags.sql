@@ -12,7 +12,25 @@ CREATE INDEX IF NOT EXISTS idx_emiten_flags_emiten ON emiten_flags(emiten);
 ALTER TABLE emiten_flags ENABLE ROW LEVEL SECURITY;
 
 -- Allow public read access (or restricted based on app needs)
-CREATE POLICY "Allow public read access" ON emiten_flags FOR SELECT USING (true);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'emiten_flags' AND policyname = 'Allow public read access'
+    ) THEN
+        CREATE POLICY "Allow public read access" ON emiten_flags FOR SELECT USING (true);
+    END IF;
+END
+$$;
 
 -- Allow authenticated upload (adjust as needed)
-CREATE POLICY "Allow authenticated insert/update" ON emiten_flags FOR ALL USING (true) WITH CHECK (true);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_policies 
+        WHERE tablename = 'emiten_flags' AND policyname = 'Allow authenticated insert/update'
+    ) THEN
+        CREATE POLICY "Allow authenticated insert/update" ON emiten_flags FOR ALL USING (true) WITH CHECK (true);
+    END IF;
+END
+$$;
